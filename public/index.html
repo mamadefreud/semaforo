@@ -18,5 +18,26 @@
   <ul id="lista-verde"></ul>
 
   <script src="script.js"></script>
+
+  <h2>Secuencias del día</h2>
+
+<div>
+  <textarea id="inputSecuencias" rows="3" cols="50" placeholder="Ej: 024, 025, 026"></textarea>
+  <br>
+  <button onclick="cargarSecuencias()">Cargar secuencias</button>
+  <button onclick="resetearDia()">Resetear día</button>
+</div>
+
+<table id="tablaSecuencias">
+  <thead>
+    <tr>
+      <th>Secuencia</th>
+      <th>Asignar a</th>
+      <th>Completada</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
 </body>
 </html>
