@@ -58,3 +58,48 @@ app.post("/asignarTarea", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en puerto ${PORT}`);
 });
+
+const fs = require('fs');
+const secuenciasPath = './secuencias.json';
+
+// Obtener secuencias
+app.get('/secuencias', (req, res) => {
+  fs.readFile(secuenciasPath, (err, data) => {
+    if (err) return res.status(500).send('Error leyendo secuencias');
+    res.send(JSON.parse(data));
+  });
+});
+
+// Cargar nuevas secuencias
+app.post('/secuencias', (req, res) => {
+  const nuevas = req.body; // lista [{numero, editor: "", completada: false}]
+  fs.writeFile(secuenciasPath, JSON.stringify(nuevas, null, 2), err => {
+    if (err) return res.status(500).send('Error guardando secuencias');
+    res.sendStatus(200);
+  });
+});
+
+// Actualizar una secuencia (asignar editor o marcar completado)
+app.post('/secuencias/update', (req, res) => {
+  const { index, campo, valor } = req.body;
+
+  fs.readFile(secuenciasPath, (err, data) => {
+    if (err) return res.status(500).send('Error leyendo secuencias');
+    const secuencias = JSON.parse(data);
+    secuencias[index][campo] = valor;
+
+    fs.writeFile(secuenciasPath, JSON.stringify(secuencias, null, 2), err => {
+      if (err) return res.status(500).send('Error actualizando');
+      res.sendStatus(200);
+    });
+  });
+});
+
+// Resetear secuencias
+app.post('/secuencias/reset', (req, res) => {
+  fs.writeFile(secuenciasPath, '[]', err => {
+    if (err) return res.status(500).send('Error reseteando');
+    res.sendStatus(200);
+  });
+});
+
