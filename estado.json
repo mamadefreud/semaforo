@@ -1,10 +1,7 @@
-{
-  "estados": {
-    "Mariana": "rojo",
-    "Ximena": "rojo",
-    "Mau": "rojo",
-    "Héctor": "rojo",
-    "Vero": "rojo"
-  },
-  "ordenVerde": []
-}
+[
+  { "nombre": "Mariana", "estado": "rojo" },
+  { "nombre": "Ximena", "estado": "rojo" },
+  { "nombre": "Mau", "estado": "rojo" },
+  { "nombre": "Héctor", "estado": "rojo" },
+  { "nombre": "Vero", "estado": "rojo" }
+]
