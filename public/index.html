@@ -2,42 +2,24 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Semáforo del equipo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Semáforo de Editores</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Arete 2.0 <img src=semaforo.gif width=50 height=50></h1>
+  <h1>Semáforo de Editores</h1>
 
- <div id="semaforos"></div>
-<div id="ordenDisponible"></div>
-
-  <button onclick="asignarTarea()">Asignar secuencia</button>
-  <p id="ultimo-asignado" style="margin-top: 1rem; font-weight: bold;"></p>
-
-  <h2>Disponibles (en orden):</h2>
-  <ul id="lista-verde"></ul>
+  <div id="semaforos"></div>
+  <div id="ordenDisponible"></div>
 
   <h2>Secuencias del día</h2>
+  <form id="formSecuencias">
+    <textarea id="inputSecuencias" placeholder="Una secuencia por línea..."></textarea>
+    <button type="submit">Agregar secuencias</button>
+  </form>
 
-<div>
-  <textarea id="inputSecuencias" rows="3" cols="50" placeholder="Ej: 024, 025, 026"></textarea>
-  <br>
-  <button onclick="cargarSecuencias()">Cargar secuencias</button>
-  <button onclick="resetearDia()">Resetear día</button>
-</div>
+  <div id="listaSecuencias"></div>
 
-<table id="tablaSecuencias">
-  <thead>
-    <tr>
-      <th>Secuencia</th>
-      <th>Asignar a</th>
-      <th>Completada</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-    <script src="script.js"></script>
-
+  <script src="script.js"></script>
 </body>
 </html>
