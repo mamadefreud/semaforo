@@ -1,68 +1,66 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// === Configuración ===
+app.use(express.static('public'));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
-const estadoPath = path.join(__dirname, "estado.json");
-
-function leerEstado() {
-  const data = fs.readFileSync(estadoPath);
-  return JSON.parse(data);
-}
-
-function guardarEstado(data) {
-  fs.writeFileSync(estadoPath, JSON.stringify(data, null, 2));
-}
-
-app.get("/estado", (req, res) => {
-  const data = leerEstado();
-  res.json(data);
-});
-
-app.post("/cambiarEstado", (req, res) => {
-  const { nombre, estado } = req.body;
-  const data = leerEstado();
-
-  data.estados[nombre] = estado;
-
-  // Actualizar ordenVerde
-  if (estado === "verde" && !data.ordenVerde.includes(nombre)) {
-    data.ordenVerde.push(nombre);
-  } else if (estado === "rojo") {
-    data.ordenVerde = data.ordenVerde.filter(n => n !== nombre);
-  }
-
-  guardarEstado(data);
-  res.json(data);
-});
-
-app.post("/asignarTarea", (req, res) => {
-  const data = leerEstado();
-
-  if (data.ordenVerde.length === 0) {
-    return res.status(400).json({ error: "No hay nadie disponible" });
-  }
-
-  const asignado = data.ordenVerde.shift();
-  data.estados[asignado] = "rojo";
-
-  guardarEstado(data);
-
-  res.json({ ...data, asignado });
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
-});
-
-const fs = require('fs');
+const estadoPath = './estado.json';
 const secuenciasPath = './secuencias.json';
 
-// Obtener secuencias
+// === SEMÁFOROS ===
+
+// Inicializa estado si no existe
+if (!fs.existsSync(estadoPath)) {
+  const inicial = [
+    { nombre: "Mariana", estado: "rojo" },
+    { nombre: "Ximena", estado: "rojo" },
+    { nombre: "Mau", estado: "rojo" },
+    { nombre: "Héctor", estado: "rojo" },
+    { nombre: "Vero", estado: "rojo" }
+  ];
+  fs.writeFileSync(estadoPath, JSON.stringify(inicial, null, 2));
+}
+
+// Obtener estado
+app.get('/estado', (req, res) => {
+  fs.readFile(estadoPath, (err, data) => {
+    if (err) return res.status(500).send('Error leyendo estado');
+    res.send(JSON.parse(data));
+  });
+});
+
+// Cambiar estado de una persona
+app.post('/estado', (req, res) => {
+  const { nombre, estado: nuevoEstado } = req.body;
+  fs.readFile(estadoPath, (err, data) => {
+    if (err) return res.status(500).send('Error leyendo estado');
+    let estados = JSON.parse(data);
+
+    const index = estados.findIndex(p => p.nombre === nombre);
+    if (index !== -1) {
+      estados[index].estado = nuevoEstado;
+      fs.writeFile(estadoPath, JSON.stringify(estados, null, 2), err => {
+        if (err) return res.status(500).send('Error guardando estado');
+        res.sendStatus(200);
+      });
+    } else {
+      res.status(404).send('Nombre no encontrado');
+    }
+  });
+});
+
+// === SECUENCIAS ===
+
+// Inicializa archivo si no existe
+if (!fs.existsSync(secuenciasPath)) {
+  fs.writeFileSync(secuenciasPath, '[]');
+}
+
+// Obtener todas las secuencias
 app.get('/secuencias', (req, res) => {
   fs.readFile(secuenciasPath, (err, data) => {
     if (err) return res.status(500).send('Error leyendo secuencias');
@@ -79,23 +77,26 @@ app.post('/secuencias', (req, res) => {
   });
 });
 
-// Actualizar una secuencia (asignar editor o marcar completado)
+// Actualizar una secuencia
 app.post('/secuencias/update', (req, res) => {
   const { index, campo, valor } = req.body;
 
   fs.readFile(secuenciasPath, (err, data) => {
     if (err) return res.status(500).send('Error leyendo secuencias');
     const secuencias = JSON.parse(data);
-    secuencias[index][campo] = valor;
-
-    fs.writeFile(secuenciasPath, JSON.stringify(secuencias, null, 2), err => {
-      if (err) return res.status(500).send('Error actualizando');
-      res.sendStatus(200);
-    });
+    if (index >= 0 && index < secuencias.length) {
+      secuencias[index][campo] = valor;
+      fs.writeFile(secuenciasPath, JSON.stringify(secuencias, null, 2), err => {
+        if (err) return res.status(500).send('Error actualizando');
+        res.sendStatus(200);
+      });
+    } else {
+      res.status(400).send('Índice inválido');
+    }
   });
 });
 
-// Resetear secuencias
+// Resetear todas las secuencias
 app.post('/secuencias/reset', (req, res) => {
   fs.writeFile(secuenciasPath, '[]', err => {
     if (err) return res.status(500).send('Error reseteando');
@@ -103,3 +104,7 @@ app.post('/secuencias/reset', (req, res) => {
   });
 });
 
+// === Iniciar servidor ===
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
