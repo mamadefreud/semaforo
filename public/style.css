@@ -1,49 +1,83 @@
 body {
-  font-family: sans-serif;
-  text-align: center;
-  background: #f9f9f9;
-  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+  padding: 20px;
+  margin: 0;
 }
 
-#team {
+h1, h2, h3 {
+  color: #444;
+}
+
+#semaforos {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin: 2rem auto;
-  max-width: 400px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-.miembro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  padding: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.semaforo {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.verde {
-  background-color: green;
-}
-
-.rojo {
-  background-color: red;
-}
-
-#lista-verde {
-  list-style: none;
-  padding: 0;
-}
-
-#lista-verde li {
-  margin: 5px 0;
+#semaforos button {
+  padding: 10px 20px;
+  border: none;
+  color: white;
   font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+#ordenDisponible {
+  margin-bottom: 30px;
+}
+
+#ordenDisponible h3 {
+  margin-bottom: 5px;
+}
+
+#ordenDisponible p {
+  margin: 0;
+  font-weight: bold;
+}
+
+#formSecuencias {
+  margin-bottom: 20px;
+}
+
+#inputSecuencias {
+  width: 100%;
+  height: 100px;
+  padding: 10px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#formSecuencias button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#formSecuencias button:hover {
+  background-color: #0056b3;
+}
+
+#listaSecuencias div {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+select, input[type="checkbox"] {
+  margin-left: 10px;
 }
