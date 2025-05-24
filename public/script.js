@@ -1,140 +1,108 @@
-// === Semáforo ===
-
-const nombres = ["Mariana", "Ximena", "Mau", "Héctor", "Vero"];
-let estado = [];
-
-function cargarEstado() {
+function cargarSemaforos() {
   fetch('/estado')
     .then(res => res.json())
     .then(data => {
-      estado = data;
-      actualizarSemaforos();
+      const contenedor = document.getElementById('semaforos');
+      contenedor.innerHTML = '';
+      data.forEach(persona => {
+        const boton = document.createElement('button');
+        boton.textContent = persona.nombre;
+        boton.style.backgroundColor = persona.estado === 'verde' ? 'green' : 'red';
+        boton.onclick = () => {
+          const nuevoEstado = persona.estado === 'verde' ? 'rojo' : 'verde';
+          fetch('/estado', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: persona.nombre, estado: nuevoEstado })
+          }).then(cargarSemaforos);
+        };
+        contenedor.appendChild(boton);
+      });
+
+      actualizarOrden(data);
     });
 }
 
-function cambiarEstado(nombre, nuevoEstado) {
-  fetch('/estado', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre, estado: nuevoEstado })
-  }).then(() => cargarEstado());
-}
-
-function actualizarSemaforos() {
-  const contenedor = document.getElementById('semaforos');
-  contenedor.innerHTML = '';
-
-  estado.forEach(persona => {
-    const div = document.createElement('div');
-    div.style.marginBottom = '10px';
-    div.innerHTML = `
-      <strong>${persona.nombre}</strong>
-      <button style="background-color: ${persona.estado === 'verde' ? 'green' : 'lightgray'}" onclick="cambiarEstado('${persona.nombre}', 'verde')">🟢</button>
-      <button style="background-color: ${persona.estado === 'rojo' ? 'red' : 'lightgray'}" onclick="cambiarEstado('${persona.nombre}', 'rojo')">🔴</button>
-    `;
-    contenedor.appendChild(div);
+function actualizarOrden(data) {
+  const disponibles = data.filter(p => p.estado === 'verde');
+  const lista = document.getElementById('ordenDisponible');
+  lista.innerHTML = '<h3>Disponibles en orden:</h3>';
+  disponibles.forEach(p => {
+    const pEl = document.createElement('p');
+    pEl.textContent = p.nombre;
+    lista.appendChild(pEl);
   });
-
-  actualizarSecuencias();
 }
 
-function getEditoresEnVerde() {
-  return estado.filter(p => p.estado === "verde").map(p => p.nombre);
-}
-
-// === Secuencias ===
-
-let secuencias = [];
-
-function cargarSecuencias() {
-  const input = document.getElementById("inputSecuencias").value;
-  const numeros = input.split(",").map(n => n.trim()).filter(n => n !== "");
-
-  secuencias = numeros.map(n => ({ numero: n, editor: "", completada: false }));
-
+document.getElementById('formSecuencias').addEventListener('submit', e => {
+  e.preventDefault();
+  const texto = document.getElementById('inputSecuencias').value.trim();
+  const secuencias = texto.split('\n').map(s => s.trim()).filter(s => s);
   fetch('/secuencias', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(secuencias)
-  }).then(() => renderSecuencias());
-}
+    body: JSON.stringify({ secuencias })
+  }).then(cargarSecuencias);
+});
 
-function renderSecuencias() {
+function cargarSecuencias() {
   fetch('/secuencias')
     .then(res => res.json())
     .then(data => {
-      secuencias = data;
-
-      const tbody = document.getElementById("tablaSecuencias").querySelector("tbody");
-      tbody.innerHTML = "";
-
-      secuencias.forEach((seq, i) => {
-        const row = document.createElement("tr");
-
-        // número
-        const tdNumero = document.createElement("td");
-        tdNumero.textContent = seq.numero;
-        row.appendChild(tdNumero);
-
-        // asignar a
-        const tdAsignar = document.createElement("td");
-        const select = document.createElement("select");
-
-        const defaultOpt = document.createElement("option");
-        defaultOpt.textContent = "-- Seleccionar --";
-        defaultOpt.value = "";
-        select.appendChild(defaultOpt);
-
-        getEditoresEnVerde().forEach(editor => {
-          const opt = document.createElement("option");
-          opt.value = editor;
-          opt.textContent = editor;
-          select.appendChild(opt);
-        });
-
-        select.value = seq.editor;
-        select.onchange = () => {
-          asignarEditor(i, select.value);
-        };
-        tdAsignar.appendChild(select);
-        row.appendChild(tdAsignar);
-
-        // completado
-        const tdCheck = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = seq.completada;
-        checkbox.onchange = () => {
-          actualizarCampoSecuencia(i, "completada", checkbox.checked);
-        };
-        tdCheck.appendChild(checkbox);
-        row.appendChild(tdCheck);
-
-        tbody.appendChild(row);
+      const contenedor = document.getElementById('listaSecuencias');
+      contenedor.innerHTML = '';
+      data.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <strong>${s.nombre}</strong> —
+          ${s.editor ? `Asignada a ${s.editor}` : 'Sin asignar'}
+          ${s.completada ? '✅' : ''}
+          <br>
+          <label>Asignar a:
+            <select onchange="asignarEditor(${i}, this.value)">
+              <option value="">--</option>
+              <option value="Mariana">Mariana</option>
+              <option value="Ximena">Ximena</option>
+              <option value="Mau">Mau</option>
+              <option value="Héctor">Héctor</option>
+              <option value="Vero">Vero</option>
+            </select>
+          </label>
+          <label>
+            <input type="checkbox" ${s.completada ? 'checked' : ''} onchange="marcarCompletada(${i}, this.checked)" />
+            Completada
+          </label>
+          <hr>
+        `;
+        contenedor.appendChild(div);
       });
     });
 }
 
-function asignarEditor(index, editor) {
-  actualizarCampoSecuencia(index, "editor", editor);
-  cambiarEstado(editor, "rojo");
-}
-
-function actualizarCampoSecuencia(index, campo, valor) {
-  fetch('/secuencias/update', {
+function asignarEditor(index, nombre) {
+  fetch('/asignar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index, campo, valor })
-  }).then(() => renderSecuencias());
+    body: JSON.stringify({ index, nombre })
+  }).then(() => {
+    cargarSecuencias();
+    if (nombre) {
+      fetch('/estado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, estado: 'rojo' })
+      }).then(cargarSemaforos);
+    }
+  });
 }
 
-function resetearDia() {
-  fetch('/secuencias/reset', { method: 'POST' }).then(() => renderSecuencias());
+function marcarCompletada(index, completada) {
+  fetch('/completar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ index, completada })
+  }).then(cargarSecuencias);
 }
 
-// === Inicialización ===
-
-window.onload = () => {
-  cargarEstado();
-  renderSecuencias();
-};
+cargarSemaforos();
+cargarSecuencias();
