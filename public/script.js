@@ -23,16 +23,14 @@ function cargarSemaforos() {
     });
 }
 
-function actualizarOrden(data) {
-  const disponibles = data.filter(p => p.estado === 'verde');
-  const lista = document.getElementById('ordenDisponible');
-  lista.innerHTML = '<h3>Disponibles en orden:</h3>';
-  disponibles.forEach(p => {
-    const pEl = document.createElement('p');
-    pEl.textContent = p.nombre;
-    lista.appendChild(pEl);
-  });
+function actualizarOrdenDisponible(estado) {
+  const ordenDiv = document.getElementById('ordenDisponible');
+  const disponibles = estado.filter(p => p.estado === 'verde');
+  disponibles.sort((a, b) => a.timestamp - b.timestamp); // ← orden por hora
+  ordenDiv.innerHTML = '<h3>Orden disponible:</h3>' +
+    disponibles.map(p => `<p>${p.nombre}</p>`).join('');
 }
+
 
 document.getElementById('formSecuencias').addEventListener('submit', e => {
   e.preventDefault();
