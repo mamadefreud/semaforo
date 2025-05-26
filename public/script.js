@@ -1,106 +1,119 @@
-function cargarSemaforos() {
-  fetch('/estado')
-    .then(res => res.json())
-    .then(data => {
-      const contenedor = document.getElementById('semaforos');
-      contenedor.innerHTML = '';
-      data.forEach(persona => {
-        const boton = document.createElement('button');
-        boton.textContent = persona.nombre;
-        boton.style.backgroundColor = persona.estado === 'verde' ? 'green' : 'red';
-        boton.onclick = () => {
-          const nuevoEstado = persona.estado === 'verde' ? 'rojo' : 'verde';
-          fetch('/estado', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre: persona.nombre, estado: nuevoEstado })
-          }).then(cargarSemaforos);
-        };
-        contenedor.appendChild(boton);
+document.addEventListener('DOMContentLoaded', () => {
+  const nombres = ['Mariana', 'Ximena', 'Mau', 'Héctor', 'Vero'];
+  const semaforosDiv = document.getElementById('semaforos');
+  const ordenDisponibleDiv = document.getElementById('ordenDisponible');
+  const listaSecuenciasDiv = document.getElementById('listaSecuencias');
+
+  let estado = [];
+
+  function cargarEstado() {
+    fetch('/estado')
+      .then(res => res.json())
+      .then(data => {
+        estado = data;
+        renderSemaforos();
+        actualizarOrdenDisponible();
+        cargarSecuencias();
       });
+  }
 
-      actualizarOrden(data);
-    });
-}
-
-function actualizarOrdenDisponible(estado) {
-  const ordenDiv = document.getElementById('ordenDisponible');
-  const disponibles = estado.filter(p => p.estado === 'verde');
-  disponibles.sort((a, b) => a.timestamp - b.timestamp); // ← orden por hora
-  ordenDiv.innerHTML = '<h3>Orden disponible:</h3>' +
-    disponibles.map(p => `<p>${p.nombre}</p>`).join('');
-}
-
-
-document.getElementById('formSecuencias').addEventListener('submit', e => {
-  e.preventDefault();
-  const texto = document.getElementById('inputSecuencias').value.trim();
-  const secuencias = texto.split('\n').map(s => s.trim()).filter(s => s);
-  fetch('/secuencias', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secuencias })
-  }).then(cargarSecuencias);
-});
-
-function cargarSecuencias() {
-  fetch('/secuencias')
-    .then(res => res.json())
-    .then(data => {
-      const contenedor = document.getElementById('listaSecuencias');
-      contenedor.innerHTML = '';
-      data.forEach((s, i) => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <strong>${s.nombre}</strong> —
-          ${s.editor ? `Asignada a ${s.editor}` : 'Sin asignar'}
-          ${s.completada ? '✅' : ''}
-          <br>
-          <label>Asignar a:
-            <select onchange="asignarEditor(${i}, this.value)">
-              <option value="">--</option>
-              <option value="Mariana">Mariana</option>
-              <option value="Ximena">Ximena</option>
-              <option value="Mau">Mau</option>
-              <option value="Héctor">Héctor</option>
-              <option value="Vero">Vero</option>
-            </select>
-          </label>
-          <label>
-            <input type="checkbox" ${s.completada ? 'checked' : ''} onchange="marcarCompletada(${i}, this.checked)" />
-            Completada
-          </label>
-          <hr>
-        `;
-        contenedor.appendChild(div);
+  function renderSemaforos() {
+    semaforosDiv.innerHTML = '';
+    estado.forEach(persona => {
+      const btn = document.createElement('button');
+      btn.textContent = persona.nombre;
+      btn.style.backgroundColor = persona.estado === 'verde' ? 'green' : 'red';
+      btn.addEventListener('click', () => {
+        const nuevoEstado = persona.estado === 'verde' ? 'rojo' : 'verde';
+        fetch('/estado', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: persona.nombre, estado: nuevoEstado })
+        }).then(() => cargarEstado());
       });
+      semaforosDiv.appendChild(btn);
     });
-}
+  }
 
-function asignarEditor(index, nombre) {
-  fetch('/asignar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index, nombre })
-  }).then(() => {
-    cargarSecuencias();
-    if (nombre) {
-      fetch('/estado', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, estado: 'rojo' })
-      }).then(cargarSemaforos);
-    }
+  function actualizarOrdenDisponible() {
+    const disponibles = estado
+      .filter(p => p.estado === 'verde')
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    ordenDisponibleDiv.innerHTML = '<h3>Orden disponible:</h3>' +
+      (disponibles.length > 0
+        ? disponibles.map(p => `<p>${p.nombre}</p>`).join('')
+        : '<p><em>No hay nadie disponible.</em></p>');
+  }
+
+  // Secuencias
+
+  document.getElementById('formSecuencias').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('inputSecuencias').value.trim();
+    if (!input) return;
+    const secuencias = input.split(',').map(s => s.trim()).filter(Boolean);
+    fetch('/secuencias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secuencias })
+    }).then(() => {
+      document.getElementById('inputSecuencias').value = '';
+      cargarSecuencias();
+    });
   });
-}
 
-function marcarCompletada(index, completada) {
-  fetch('/completar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index, completada })
-  }).then(cargarSecuencias);
-}
+  function cargarSecuencias() {
+    fetch('/secuencias')
+      .then(res => res.json())
+      .then(secuencias => {
+        listaSecuenciasDiv.innerHTML = '';
+        secuencias.forEach((seq, index) => {
+          const div = document.createElement('div');
 
-cargarSemaforos();
-cargarSecuencias();
+          const label = document.createElement('span');
+          label.textContent = `Secuencia ${seq.nombre}`;
+
+          const select = document.createElement('select');
+          const optionDefault = document.createElement('option');
+          optionDefault.textContent = '-- Asignar editor --';
+          optionDefault.disabled = true;
+          optionDefault.selected = !seq.editor;
+          select.appendChild(optionDefault);
+
+          estado.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.nombre;
+            opt.textContent = p.nombre;
+            if (seq.editor === p.nombre) opt.selected = true;
+            select.appendChild(opt);
+          });
+
+          select.addEventListener('change', () => {
+            fetch('/asignar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ index, nombre: select.value })
+            }).then(() => cargarEstado());
+          });
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = seq.completada;
+          checkbox.addEventListener('change', () => {
+            fetch('/completar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ index, completada: checkbox.checked })
+            });
+          });
+
+          div.appendChild(label);
+          div.appendChild(select);
+          div.appendChild(checkbox);
+          listaSecuenciasDiv.appendChild(div);
+        });
+      });
+  }
+
+  cargarEstado();
+});
