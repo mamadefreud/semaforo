@@ -56,6 +56,23 @@ app.post('/estado', (req, res) => {
   if (!nombre || !estado) {
     return res.status(400).json({ error: 'Faltan datos' });
   }
+
+  const estadoActual = leerJSON(estadoPath) || [];
+  const index = estadoActual.findIndex(p => p.nombre === nombre);
+
+  if (index !== -1) {
+    estadoActual[index].estado = estado;
+    estadoActual[index].timestamp = (estado === 'verde') ? Date.now() : null;
+    guardarJSON(estadoPath, estadoActual);
+    return res.json({ ok: true });
+  }
+
+  res.status(404).json({ error: 'Persona no encontrada' });
+});
+
+  if (!nombre || !estado) {
+    return res.status(400).json({ error: 'Faltan datos' });
+  }
   const estadoActual = leerJSON(estadoPath) || [];
   const index = estadoActual.findIndex(p => p.nombre === nombre);
   if (index !== -1) {
